@@ -1,12 +1,11 @@
 from __future__ import print_function
-import cv2 as cv
+import cv2
 import argparse
 import rospy
 from cv_bridge import CvBridge
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from sklearn.cluster import KMeans
-import numpy as np
 import matplotlib.pyplot as plt
 
 parser = argparse.ArgumentParser(description='This program shows how to use background subtraction methods provided by \
@@ -18,7 +17,6 @@ bridge = CvBridge()
 
 rospy.init_node('listener', anonymous=True)
 
-global cv_image
 
 def callback(data):
     try:
@@ -28,21 +26,28 @@ def callback(data):
         print(e)
         args = parser.parse_args()
 
-    backSub = cv.createBackgroundSubtractorMOG2()
+    backSub = cv2.createBackgroundSubtractorMOG2(history=200, nmixtures=5, backgroundRatio=0.7, noiseSigma=0)
     fgMask = backSub.apply(frame)
+
+    # # 輪郭抽出する。
+    # contours = cv2.findContours(fgMask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
+
+    # # 小さい輪郭は除く
+    # contours = list(filter(lambda x: cv2.contourArea(x) > 2000, contours))
+
+    # # 輪郭を囲む外接矩形を取得する。
+    # bboxes = list(map(lambda x: cv2.boundingRect(x), contours))
+
+    # # 矩形を描画する。
+    # for x, y, w, h in bboxes:
+    #     cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
     
     #cv.rectangle(frame, (10, 2), (100,20), (255,255,255), -1)
-    Y, X = np.where(fgMask > 200)
-    y = KMeans(n_clusters=2, random_state=0).fit_predict(np.array([X,Y]).T)
-    plt.scatter(X, -Y+288, c=y)
-    plt.xlim(0,288)
-    plt.ylim(0,288)
-    plt.show()
     
-    cv.imshow('Frame', frame)
-    cv.imshow('FG Mask', fgMask)
+    cv2.imshow('Frame', frame)
+    cv2.imshow('FG Mask', fgMask)
     
-    keyboard = cv.waitKey(30)
+    keyboard = cv2.waitKey(30)
     # if keyboard == 'q' or keyboard == 27:
     #     break
 
